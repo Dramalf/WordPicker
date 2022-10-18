@@ -1,0 +1,31 @@
+.words-list {
+    width: 390px;
+    background-color: lightgoldenrodyellow;
+    position: relative;
+
+    .word-item {
+        position: relative;
+        .delete-btn {
+            position: absolute;
+            height: auto;
+            background-color: rgb(233, 57, 57);
+            color: #fff;
+            height: 100%;
+            line-height: 100%;
+            top: 0;
+            padding: 0 16px;
+            opacity: 0;
+            transition: transform .2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            
+        }
+
+        .move {
+            opacity: 1;
+            transform: translateX(-100%);
+        }
+    }
+}

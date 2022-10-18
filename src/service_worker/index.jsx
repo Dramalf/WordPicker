@@ -1,86 +1,74 @@
 /* eslint-disable no-undef */
-import { serviceWokerUtil } from '../util'
-console.log('welcome')
-const core = {
-    "SET_PROXY_URL": (v) => {
-        chrome.storage.sync.set({ 'proxy_url': v }, function () {
-            console.log('Value is set to ' + v);
-        });
-    },
-
-
-    "ENABLE_PROXY": (data) => {
-        const { mockList } = data;
-        const removeRuleIds = mockList.map((m, index) => index + 1);
-        const addRules = mockList.map((m, index) => {
-            const { urlFilter, targetUrl, id } = m;
-            return {
-                id: index + 1,
-                priority: 1,
-                condition: {
-                    urlFilter,
-                    resourceTypes: ["xmlhttprequest", "script"],
-                },
-                action: {
-                    type: "redirect",
-                    redirect: { url: targetUrl }
-                }
-            }
-        })
-        console.log('addRules=>>', removeRuleIds, addRules)
-        const rules = {
-            removeRuleIds,
-            addRules
-        };
-        chrome.declarativeNetRequest.updateDynamicRules(rules, () => {
-            chrome.declarativeNetRequest.getDynamicRules(rules => console.log("enabler rules", rules))
-        }
-        )
-    },
-    "REMOVE_RULE": (data) => {
-        const { id } = data;
-        const removeRuleIds = [id];
-        const rules = {
-            removeRuleIds
-        };
-        chrome.declarativeNetRequest.updateDynamicRules(rules)
-        console.log('remove rule',id);
+const { wordsDB } = require('./db')
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    console.log('BG GET==>', msg)
+    const { type, data } = msg;
+    switch (type) {
+        case "INIT":
+            init()
+                .then(res => {
+                    sendResponse(res)
+                });
+            break;
+        case "GET_CONFIG":
+            sendResponse('123 send');
+            break;
+        case "ADD_WORD":
+            addWord(data);
+            break;
+        case "ADD_MEANING":
+            addMeaning(data)
+            break;
+        case "EDIT_MEANING":
+            editMeaning(data)
+            break;
+        case "DELETE_WORD":
+            deleteWord(data);
+            break;
+        case "SEARCH_WORD":
+            searchWord(data);
+            break;
+        default:
+            console.log('unknown type')
     }
-}
-chrome.runtime.onMessage.addListener(async (msg, sender, sendResponse) => {
-    console.log('BG get==>', msg)
-    const { type, data } = msg
-    if (type === 'GET_INIT_DATA') {
-       
-        serviceWokerUtil.insertFunc({
-            func: serviceWokerUtil.getHistoryMOCK_LIST,
-            callback: (storage) => {
-                sendResponse(storage[0].result)
-                console.log('in store', storage[0].result)
-            }
-        })
-        const r= await chrome.storage.sync.get('mockList')
-        console.log('storage',r)
-    } else {
-        core[type] && core[type](data)
-    }
-    // const { type, data } = msg;
-    // core[type]&&core[type](data);
     return true;
 })
-chrome.declarativeNetRequest.onRuleMatchedDebug.addListener(
-    (e) => console.log('rule match', e)
-);
-
-chrome.storage.onChanged.addListener((changes,namespace)=>{
-    for (var key in changes) {
-        var storageChange = changes[key];
-        console.log(
-                    key,
-                    namespace,
-                    storageChange.oldValue,
-                    storageChange.newValue);
-      }
-
-})
-
+function addWord(data) {
+    let word = { id: new Date().getTime(), word: data }
+    wordsDB.set(word)
+    chrome.storage.sync.set({ currentWord: { word: data } });
+}
+async function editMeaning(data) {
+    wordsDB.set(data);
+}
+async function addMeaning(data) {
+    const currentWord = (await chrome.storage.sync.get(['currentWord'])).currentWord;
+    console.log(currentWord);
+    currentWord.meaning = data;
+    wordsDB.set(currentWord);
+    chrome.storage.sync.set({ currentWord: currentWord });
+}
+async function deleteWord(v) {
+    wordsDB.delete(v)
+}
+async function searchWord(v) {
+    const tabId=await getTabId();
+    console.log('search',v)
+    chrome.scripting.excuteScript(  { 
+        target: {tabId: tabId},
+        func: (url)=>{
+            const event=new CustomEvent('search-word',{url});
+            window.dispatchEvent(event);
+        },
+        args: [v]
+    })
+}
+async function init() {
+    const res = await wordsDB.get()
+    console.log(res, 'init')
+    return res
+}
+async function getTabId(){
+    let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    return tab.id
+} 

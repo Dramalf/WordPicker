@@ -7,10 +7,14 @@ const TerserWebpackPlugin = require("terser-webpack-plugin");
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const ImageMinimizerPlugin = require("image-minimizer-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const EncodingPlugin = require('webpack-encoding-plugin');
+const SpeedMeasurePlugin = require("speed-measure-webpack-plugin");
+const smp = new SpeedMeasurePlugin();
 
 const getStyleLoaders = (preProcessor) => {
   return [
     MiniCssExtractPlugin.loader,
+    'cache-loader',
     "css-loader",
     {
       loader: "postcss-loader",
@@ -26,19 +30,25 @@ const getStyleLoaders = (preProcessor) => {
   ].filter(Boolean);
 };
 
-module.exports = {
+module.exports={
   entry: {
-    popup:path.resolve(__dirname, "src/popup/index.jsx"),
-    service_worker:path.resolve(__dirname, "src/service_worker/index.jsx"),
-    content:path.resolve(__dirname, "src/content/index.js")
+    popup: path.resolve(__dirname, "src/popup/index.jsx"),
+    service_worker: path.resolve(__dirname, "src/service_worker/index.jsx"),
+    content: path.resolve(__dirname, "src/content/index.js")
   },
   optimization: {
-    minimize: true
+    minimize: true,
+    minimizer: [
+      // 压缩css
+      new CssMinimizerPlugin(),
+      // 压缩js
+      new TerserWebpackPlugin(),
+    ]
   },
   output: {
     path: path.resolve(__dirname, "build"),
-    filename: "js/[name].js",
-    chunkFilename: 'js/[name].js',
+    filename: "[name].js",
+    chunkFilename: '[name].js',
     clean: true,
   },
   module: {
@@ -74,9 +84,9 @@ module.exports = {
               plugins: [
                 // "@babel/plugin-transform-runtime" // presets中包含了
                 ['babel-plugin-import', {
-                    libraryName: '@alifd/next',
-                    style: true
-                  }]
+                  libraryName: '@alifd/next',
+                  style: true
+                }]
               ],
             },
           },
@@ -85,22 +95,12 @@ module.exports = {
     ],
   },
   plugins: [
-    // new ESLintWebpackPlugin({
-    //   context: path.resolve(__dirname, "src"),
-    //   exclude: "node_modules",
-    //   cache: true,
-    //   cacheLocation: path.resolve(
-    //     __dirname,
-    //     "node_modules/.cache/.eslintcache"
-    //   ),
-    // }),
+    new MiniCssExtractPlugin({
+      filename: "[name].css",
+    }),
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, "public/index.html"),
       excludeChunks: ['content']
-    }),
-    new MiniCssExtractPlugin({
-      filename: "css/[name].[contenthash:10].css",
-      chunkFilename: "css/[name].[contenthash:10].chunk.css",
     }),
     // 将public下面的资源复制到dist目录去（除了index.html）
     new CopyPlugin({
@@ -121,10 +121,22 @@ module.exports = {
         },
       ],
     }),
+    new EncodingPlugin({
+      encoding: 'UTF-8'
+    }),
   ],
   resolve: {
     extensions: [".jsx", ".js", ".json"],
   },
+  devServer: {
+    hot:true,
+    // 将 bundle 写到磁盘而不是内存
+    devMiddleware:{
+      writeToDisk: true
+    }
+    
+},
   mode: "production",
-  devtool: "source-map" 
+  performance: false
 };
+

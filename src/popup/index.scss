@@ -1,16 +1,16 @@
-.popup-wrapper{
-    width: 300px;
-    .popup-header{
-        width: 300px;
-        height: 80px;
+html body {
+    background-color: lightgoldenrodyellow;
+}
+
+.popup-wrapper {
+    height: 440px;
+    width: 390px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    background-color: lightgoldenrodyellow;
+
+    &::-webkit-scrollbar {
+        display: none;
+
     }
-    .history-mock{
-        width: 300px;
-    }
-    .add-mock{
-        width: 300px; 
-        height: 200px;
-    }
-  
-  }
-  
+}

@@ -1,51 +1,77 @@
 
-console.log(window,'in script',window.localStorage.getItem('urlFilter'))
+require('./index.scss')
+let active = {};
+let isEntering = false;
+let enterType = ''
+const translationWebUrl = 'https://dictionary.cambridge.org/dictionary/english-chinese-simplified/'
+const input = document.createElement('input');
+input.id = 'meaning-input';
+input.placeholder = '回车添加，esc退出'
 
-function modifyResponse(response) {
-    var urlFilter=window.localStorage.getItem('urlFilter');
-    var original_response, modified_response;
-    if (this.readyState === 4&& this.requestURL.includes(urlFilter)) {
-        // 使用在 openBypass 中保存的相关参数判断是否需要修改
-        if (true||this.requestUrl  && this.requestMethod ) {
-            Object.defineProperty(this, "responseText", {writable: true});
-            Object.defineProperty(this, "status", {writable: true});
-            // 根据 sendBypass 中保存的数据修改响应内容
-            // '{"rules":[{"proxy_url":"login","target_url":"login","mockJson":{"message":"success","data":{"id":1,"type":1}}}]}';
-            this.responseText='123';
-            this.status=200
+
+
+function handleKeypress(e) {
+    const key = e.key.toLowerCase();
+    if (isEntering) {
+        if (key === 'enter') {
+            if (enterType === 'meaning') {
+                send("ADD_MEANING", input.value);
+            } else {
+                send("ADD_WORD", input.value);
+            }
+
+            closeInput()
+        } else if (e.keyCode === 27) {
+            closeInput()
         }
-        console.log('check response',this)
-        return true;
+    } else {
+        active[key] = true;
+        const selectWord = window.getSelection().toString();
+        if (active.a && active.f) {
+
+            if (selectWord) {
+                send("ADD_WORD", selectWord);
+            } else {
+                openInput('words')
+            }
+        } else if (active.e && active.f) {
+
+            if (selectWord) {
+                send("ADD_MEANING", selectWord)
+            } else {
+                openInput('meaning');
+            }
+        } else if (active.s && active.f) {
+            window.open(translationWebUrl + selectWord || '')
+        }
     }
+    setTimeout(() => {
+        active = {}
+    }, 100);
 }
 
-function openBypass(original_function) {
-
-    return function(method, url, async) {
-        // 保存请求相关参数
-        this.requestMethod = method;
-        this.requestURL = url;
-        console.log('check request',url,method);
-        this.addEventListener("readystatechange", modifyResponse);
-        this.addEventListener('onload',e=>console.log(e))
-        return original_function.apply(this, arguments);
-    };
-
+function closeInput() {
+    input.parentNode.removeChild(input)
+    input.value = null
+    isEntering = false;
 }
-
-function sendBypass(original_function) {
-    return function(data) {
-        // 保存请求相关参数
-        this.requestData = data;
-        return original_function.apply(this, arguments);
-    };
+function openInput(type) {
+    document.body.appendChild(input);
+    input.focus();
+    isEntering = true;
+    enterType = type;
 }
-function onloadBypass(original_function){
-    return function(data){
-        return original_function.apply(this, arguments);
-    }
+function send(type, data='') {
+    return chrome.runtime.sendMessage({ type: type, data: data })
 }
-
-XMLHttpRequest.prototype.open = openBypass(XMLHttpRequest.prototype.open);
-XMLHttpRequest.prototype.send = sendBypass(XMLHttpRequest.prototype.send);
-// XMLHttpRequest.prototype.onload=
+function initConfig(){
+    send("GET_CONFIG").then(res=>{console.log(res,'res')})
+}
+function start(){
+    initConfig();
+    document.addEventListener('keypress', handleKeypress)
+    window.addEventListener('search-word', ({ url }) => {
+        window.open(url)
+    });
+}
+start()

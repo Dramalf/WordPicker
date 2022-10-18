@@ -1,0 +1,20 @@
+#meaning-input {
+    position:fixed;
+    margin:auto;
+    left:0;
+    right:0;
+    top:0;
+    bottom:0;
+    width:30vw;
+    height:5vh;
+    background-color:rgb(239,237,239);
+    border-radius: 1vh;
+    padding: 0 1vh;
+    outline: none;
+    box-shadow:1vh 1vh 2vh #33333333;
+    border: none;
+    z-index: 9999999;
+}
+#meaning-input::placeholder{
+    color:rgb(175,179,170);
+}

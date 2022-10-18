@@ -1,161 +1,202 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Switch, Input, Button, Form,Collapse } from '@alifd/next';
-import { popupUtil } from '../util';
+import React, { useState, useEffect, useRef, useContext, createContext } from 'react'
+import { List, Input, Button, DatePicker2, Tab, Checkbox, NumberPicker } from '@alifd/next';
 import './index.scss'
-const FormItem = Form.Item;
-const Panel = Collapse.Panel;
+import { handleKeypress } from './utils';
+import WordsContext from './WordsContext';
+import tabsConfig from './tabs.config'
+const { RangePicker } = DatePicker2;
 export default function App() {
-    const [mockList, setMockList] = useState([])
+    const [words, setWords] = useState([{ word: '快去添加吧', meaning: "f+a添加选中单词,f+e添加释义" }]);
+    const [copyWords, setCopyWords] = useState(words.slice(0, 3));
     useEffect(() => {
-        popupUtil.sendMessage({type:'GET_INIT_DATA'},(res)=>{
-            res&&setMockList(JSON.parse(res))
-        })
-        // popupUtil.insertFunc(
-        //     {
-        //         func: popupUtil.getHistoryMOCK_LIST,
-        //         callback: (injectionResults) => {
-        //             for (const storage in injectionResults ){
-        //                 // storage && storage.result && setMockList(JSON.parse(storage.result))
-        //                 popupUtil.sendMessage({ "data": injectionResults,'type':'11kk' })
-        //                 console.log(storage)
-        //             }
-        
-        //         }
-        //     }
-        // );
+        document.addEventListener('keypress', handleKeypress);
+        chrome.runtime.sendMessage({
+            type: 'INIT', data: ''
+        }, (response) => {
+            setWords(response)
+        });
     }, [])
-    useEffect(()=>{
-        popupUtil.sendMessage({id:'update',data:mockList})
-    },[mockList])
-    const init = async () => {
-        let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: getHistoryMOCK_LIST
-        }, (res) => {
-            console.log(res)
-        })
-    }
-    const handleSwitched = (v) => {
-        // document.body.style.backgroundColor = v?'blue':'red';
-        // const o = { name: 'mlf', sex: 'male' }
-        // const s = JSON.stringify(o);
-        // const b = new Blob([s], { type: 'application/json' })
-        // const u = window.URL.createObjectURL(b);
-        chrome.runtime.sendMessage({
-            type: 'ENABLE_PROXY', data: {
-                mockList
-            }
-        }, (response) => {
-        });
-    }
-    const handleConfirm = async () => {
-        chrome.runtime.sendMessage({
-            type: 'INSERT_SCRIPT', data: {
-                targetUrl: chrome.runtime.getURL('js/content.js')
-            }
-        }, (response) => {
-        });
-        const insertURL = chrome.runtime.getURL('js/content.js');
-        let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-        chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            function: async (url, urlFilter) => {
-                let s = document.createElement('script');
-                window.localStorage.setItem('urlFilter', urlFilter);
-                const loaded = new Promise((resolve) => {
-                    s.addEventListener('load', resolve);
-                });
-                s.src = url;
-                (document.head || document.documentElement).appendChild(s);
-                await loaded;
-
-            },
-            args: [insertURL, proxyUrl]
-        });
-
-    }
-    const handleAddRule=(v) => {
-        v.id = new Date().getTime();
-        const nl = [v, ...mockList]
-        setMockList(nl);
-        chrome.storage.sync.set({mockList:nl});
-        popupUtil.sendMessage({list:nl,type:"insert one"})
-        popupUtil.insertFunc({
-            func: popupUtil.setNewMockRecord,
-            args: [JSON.stringify(nl)]
-        })
-      
-    }
-    const handleRemoveRule=(mock,index)=>{
-        let nl=mockList.filter(m=>m.id!==mock.id)
-        setMockList(nl);
-        chrome.storage.sync.set({mockList:nl});
-        popupUtil.sendMessage({type:"REMOVE_RULE",data:{id:index}});
-        popupUtil.insertFunc({
-            func: popupUtil.setNewMockRecord,
-            args: [JSON.stringify(nl)]
+    const renderTabItems = () => {
+        return tabsConfig.map(t => {
+            const {comp:TabComp,title,args={}}=t;
+            return <Tab.Item title={title}>
+                <TabComp  {...args} />
+            </Tab.Item>
         })
     }
     return (
-        <div className='popup-wrapper'>
-            <div className='popup-header'>
-                <h1>Drama Proxy</h1>
-                <Switch onChange={handleSwitched}/>
-            </div>
-            <div className='history-mock'>
-            <Collapse accordion>
-            {mockList && mockList.map((mock,index) => {
-                    return (
-                        <Panel title={mock.urlFilter} key={mock.id}>
-                            <Form labelAlign='inset' colon >
-                                <FormItem name="urlFilter" label="URL filter">
-                                    <Input defaultValue={mock.urlFilter} />
-                                </FormItem>
-                                <FormItem name="targetUrl" label="Target URL" >
-                                    <Input defaultValue={mock.targetUrl} />
-                                </FormItem>
-                                <FormItem name="mockJson" label="Mock Json" >
-                                    <Input.TextArea defaultValue={mock.mockJson} aria-label="TextArea" />
-                                </FormItem>
-                            </Form>
-                            <Button warning onClick={()=>{handleRemoveRule(mock,index)}}>delete</Button>
-                        </Panel>
-                    )
-                })}
-                </Collapse>
-         
-            </div>
-            <div className='add-mock'>
-            <Collapse defaultExpandedKeys={['add']}>
-                <Panel title="add rule" key='add'>
-                <Form labelAlign='inset' colon>
-                    <FormItem name="urlFilter" label="URL filter" required requiredMessage="Please input your urlFilter!">
-                        <Input />
-                    </FormItem>
-                    <FormItem name="targetUrl" label="Target URL" required requiredMessage="Please input your targetUrl!" >
-                        <Input />
-                    </FormItem>
-                    <FormItem name="mockJson" label="Mock Json" >
-                        <Input.TextArea
-                            defaultValue='{"data":"mock"}'
-                        />
-                    </FormItem>
-                    <FormItem label=" " colon={false}>
-                        <Form.Submit
-                            type="primary"
-                            validate
-                            onClick={handleAddRule}
-                            style={{ marginRight: 8 }}
+        <WordsContext.Provider
+            value={{
+                words,
+                setWords,
+                copyWords,
+                setCopyWords
+            }}
+        >
+            <div className='popup-wrapper'>
+                <Tab
+                    onChange={() => {
+                        chrome.runtime.sendMessage({
+                            type: 'INIT', data: ''
+                        }, (response) => {
+                            setWords(response)
+                        });
+                    }}
+
+
+                >
+                    {renderTabItems()}
+                </Tab>
+                {/* <Tab
+                    onChange={() => {
+                        chrome.runtime.sendMessage({
+                            type: 'INIT', data: ''
+                        }, (response) => {
+                            setWords(response)
+                        });
+                    }}
+                >
+                    <Tab.Item title="全部" >
+                        <div className='words-list'>
+                            <List
+                                size='small'
+                                dataSource={words}
+                                divider
+                                renderItem={(item) => (
+                                    <List.Item
+                                        title={item.word}
+                                        key={item.id}
+                                        className="word-item"
+                                        onClick={(e) => {
+                                            let last = document.querySelector('.move');
+                                            if (last) {
+                                                last.classList.remove('move')
+                                            }
+                                            e.currentTarget.querySelector('.delete-btn').classList.add('move')
+                                        }}
+                                        extra={(<div className='delete-btn' onClick={(e) => {
+                                            e.stopPropagation();
+                                            setWords(words.filter(w => w.word !== item.word));
+                                            chrome.runtime.sendMessage({ type: 'DELETE_WORD', data: item })
+                                        }}>
+                                            <div>delete</div>
+                                        </div>)}
+                                    >
+                                        <Input
+                                            className='meaning-input'
+                                            hasBorder={false}
+                                            style={{ backgroundColor: "lightgoldenrodyellow", color: "#e3e4e5" }}
+                                            defaultValue={item.meaning}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                let last = document.querySelector('.move');
+                                                if (last) {
+                                                    last.classList.remove('move');
+                                                }
+                                            }}
+                                            onFocus={(e) => { e.currentTarget.style.backgroundColor = "#fff"; }}
+                                            onBlur={(e) => { e.currentTarget.style.backgroundColor = "lightgoldenrodyellow"; }}
+                                            onChange={(v) => { chrome.runtime.sendMessage({ type: 'EDIT_MEANING', data: { word: item.word, meaning: v } }) }}
+                                        ></Input>
+                                    </List.Item>
+                                )}
+                            >
+                            </List>
+                        </div>
+                    </Tab.Item>
+                    <Tab.Item title="未释义" >
+                        <div className='words-list'>
+                            <List
+                                size='small'
+                                dataSource={words.filter(i => !i.meaning)}
+                                divider
+                                renderItem={(item) => (
+                                    <List.Item
+                                        title={item.word}
+                                        key={item.id}
+                                        className="word-item"
+                                        onClick={(e) => {
+                                            let last = document.querySelector('.move');
+                                            if (last) {
+                                                last.classList.remove('move')
+                                            }
+                                            e.currentTarget.querySelector('.delete-btn').classList.add('move')
+                                        }}
+                                        extra={(<div className='delete-btn' onClick={(e) => {
+                                            e.stopPropagation();
+                                            setWords(words.filter(w => w.word !== item.word));
+                                            chrome.runtime.sendMessage({ type: 'DELETE_WORD', data: item })
+                                        }}>
+                                            <div>delete</div>
+                                        </div>)}
+                                    >
+                                        <Input
+                                            className='meaning-input'
+                                            hasBorder={false}
+                                            style={{ backgroundColor: "lightgoldenrodyellow", color: "#e3e4e5" }}
+                                            defaultValue={item.meaning}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                let last = document.querySelector('.move');
+                                                if (last) {
+                                                    last.classList.remove('move');
+                                                }
+                                            }}
+                                            onFocus={(e) => { e.currentTarget.style.backgroundColor = "#fff"; }}
+                                            onBlur={(e) => { e.currentTarget.style.backgroundColor = "lightgoldenrodyellow"; }}
+                                            onChange={(v) => {
+                                                chrome.runtime.sendMessage({ type: 'EDIT_MEANING', data: { word: item.word, meaning: v } })
+                                            }}
+                                        ></Input>
+                                    </List.Item>
+                                )}
+                            >
+                            </List>
+                        </div>
+                    </Tab.Item>
+                    <Tab.Item title="导出" >
+                        <Tab tabPosition='left'
                         >
-                            add
-                        </Form.Submit>
-                    </FormItem>
-                </Form>
-                </Panel>
-                </Collapse>
+                            <Tab.Item title="按数量" >
+                                <div className='tab3'>
+
+                                    <div> 最近<NumberPicker style={{ width: '40px' }} defaultValue={3} min={1} onChange={(v) => {
+                                        setCopyWords(words.slice(0, v));
+                                    }} type="inline"></NumberPicker>条（共${words.length}条）</div>
+                                    <div><Button onClick={() => {
+                                        const text = copyWords.map(w => w.word + ":" + w.meaning + '\r\n').join('');
+                                        navigator.clipboard.writeText(text)
+                                    }}>复制</Button></div>
+                                </div>
+
+                            </Tab.Item>
+                            <Tab.Item title="按时间" >
+                                <div className='tab3'>
+                                    <RangePicker
+                                        showTime
+                                        timePanelProps={{
+                                            defaultValue: ["09:00", "23:59"],
+                                            format: "HH:mm",
+                                            minuteStep: 15
+                                        }}
+                                        onOk={(t) => {
+                                            const start = new Date(t[0]).getTime();
+                                            const end = new Date(t[1]).getTime();
+                                            setCopyWords(words.filter(w => w.id < end && w.id > start));
+                                        }}
+                                    />
+                                    <div><Button onClick={() => {
+                                        const text = copyWords.map(w => w.word + ":" + w.meaning + '\r\n').join('');
+                                        navigator.clipboard.writeText(text)
+                                    }}>复制</Button></div>
+                                </div>
+                            </Tab.Item>
+                        </Tab>
+                    </Tab.Item>
+                </Tab> */}
+
             </div>
-        </div>
+        </WordsContext.Provider>
+
     )
 }

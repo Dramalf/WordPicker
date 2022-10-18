@@ -1,46 +1,38 @@
 {
-  "name": "Getting Started Example",
-  "description": "Build an Extension!",
+  "name": "Words Picker",
+  "description": "Help you to record and export words cross webpages. An English learning tool。你是否在为无法及时便捷地记录下浏览网页中遇到的生词而苦恼？利用f+a提取单词，f+e添加释义，一次性批量导出单词记录到剪贴板",
   "version": "1.0",
   "manifest_version": 3,
   "background": {
-    "service_worker": "/js/service_worker.js"
+    "service_worker": "service_worker.js"
   },
   "permissions": [
-    "storage",
+    "activeTab",
     "scripting",
-    "declarativeNetRequest",
-    "declarativeNetRequestFeedback",
-    "tabs",
-    "activeTab"
+    "storage",
+    "tabs"
   ],
-  "host_permissions": [
-    "<all_urls>"
-  ],
-  "web_accessible_resources": [
+  "content_scripts":[
     {
-      "resources": [
-        "js/*.js",
-        "js/*.js.map"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
+      "matches":["<all_urls>"],
+      "js":["content.js"],
+      "css":["content.css"]
     }
-  ],
+  ]
+  ,
   "action": {
     "default_popup": "/index.html",
     "default_icon": {
-      "16": "/images/get_started16.png",
-      "32": "/images/get_started32.png",
-      "48": "/images/get_started48.png",
-      "128": "/images/get_started128.png"
+      "16": "/images/icon16.png",
+      "32": "/images/icon32.png",
+      "48": "/images/icon48.png",
+      "128": "/images/icon128.png"
     }
   },
   "icons": {
-    "16": "/images/get_started16.png",
-    "32": "/images/get_started32.png",
-    "48": "/images/get_started48.png",
-    "128": "/images/get_started128.png"
+    "16": "/images/icon16.png",
+    "32": "/images/icon32.png",
+    "48": "/images/icon48.png",
+    "128": "/images/icon128.png"
   }
 }
