@@ -22,7 +22,9 @@
             align-items: center;
             
         }
-
+        .meaning-input{
+            width: calc(100% - 60px);
+        }
         .move {
             opacity: 1;
             transform: translateX(-100%);
