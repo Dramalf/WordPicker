@@ -12,5 +12,5 @@
 * click the word in note then set it into clipboard automatically
 * enable to use f+e to add explaination to this word after click it
 ### HOW TO USE?
-*`git clone https://github.com/Dramalf/WordPicker.git`
-*Go to <chrome://extensions/>,chose to load `build` file folder
+* `git clone https://github.com/Dramalf/WordPicker.git`
+* Go to [chrome://extensions/](chrome://extensions/),chose to load `build` file folder
