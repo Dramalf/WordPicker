@@ -3,25 +3,63 @@ require('./index.scss')
 let active = {};
 let isEntering = false;
 let enterType = ''
+let words=[];
+let lastWord=''
 const translationWebUrl = 'https://dictionary.cambridge.org/dictionary/english-chinese-simplified/'
 const input = document.createElement('input');
 input.id = 'meaning-input';
 input.placeholder = '回车添加，esc退出'
 
 
-
-function handleKeypress(e) {
+const ms = [ 
+    'background:#f8ebd840',
+    'padding:3px',
+    'font-weight:700',
+    'color:#6b5152',
+    'border-radius:4px 0 0 4px'
+  ].join(';')
+  const ws=[
+    'background:#ead0d180',
+    'font-weight:700',
+    'padding:3px',
+    'color:#7a7281',
+    'border-radius:0 4px 4px 0'
+  ].join(';')
+  const sws=[
+    'background:#ead0d180',
+    'font-weight:700',
+    'padding:3px',
+    'color:#7a7281',
+    'border-radius:4px'
+  ].join(';')
+  // or
+function handleKeydown(e) {
     const key = e.key.toLowerCase();
+    if(key==='tab'){
+        if(input.style.marginBottom){
+            input.style.marginBottom='';
+        }else{
+            input.style.marginBottom='0';
+        }
+    }
     if (isEntering) {
         if (key === 'enter') {
             if (enterType === 'meaning') {
                 send("ADD_MEANING", input.value);
-            } else {
+                closeInput()
+            } else if(enterType === 'words') {
                 send("ADD_WORD", input.value);
+                closeInput()
+            }else if(enterType==='review'){
+                let index=Math.round(Math.random()*(words.length-1));
+                console.log('%c%s', sws,lastWord.word)
+                lastWord=words[index]
+                console.log('%c%s%c%s', ms,lastWord.meaning,ws,lastWord.word.substring(0,3))
+                input.value=''
             }
 
-            closeInput()
-        } else if (e.keyCode === 27) {
+           
+        } else if (key === 'escape') {
             closeInput()
         }
     } else {
@@ -43,6 +81,8 @@ function handleKeypress(e) {
             }
         } else if (active.s && active.f) {
             window.open(translationWebUrl + selectWord || '')
+        }else if (active.r && active.f){
+            reviewWords()
         }
     }
     setTimeout(() => {
@@ -65,11 +105,18 @@ function send(type, data='') {
     return chrome.runtime.sendMessage({ type: type, data: data })
 }
 function initConfig(){
-    send("GET_CONFIG").then(res=>{console.log(res,'res')})
+    // send("GET_CONFIG").then(res=>{console.log(res,'res')})
+}
+async function reviewWords(){
+    words=await send("GET_ALL_WORDS");
+    let index=Math.round(Math.random()*(words.length-1));
+    lastWord=words[index]
+    openInput('review')
+    console.log('%c%s%c%s', ms,lastWord.meaning,ws,lastWord.word.substring(0,3))
 }
 function start(){
     initConfig();
-    document.addEventListener('keypress', handleKeypress)
+    document.addEventListener('keydown', handleKeydown)
     window.addEventListener('search-word', ({ url }) => {
         window.open(url)
     });

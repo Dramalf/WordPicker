@@ -1,5 +1,6 @@
 import WordsList from "./components/WordsList"
 import ExportSelector from './components/ExportSelector'
+import ConfigSetting from "./components/ConfigSetting"
 const tabsSetting = [
     {
         title: "全部",
@@ -19,7 +20,7 @@ const tabsSetting = [
     },
     {
         title: '配置',
-        comp: ExportSelector
+        comp: ConfigSetting
     }
 ]
 export default tabsSetting

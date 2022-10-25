@@ -10,8 +10,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                     sendResponse(res)
                 });
             break;
-        case "GET_CONFIG":
-            sendResponse('123 send');
+        case "GET_ALL_WORDS":
+            wordsDB.get()
+                .then(res => {
+                    sendResponse(res);
+                })
             break;
         case "ADD_WORD":
             addWord(data);
@@ -52,12 +55,12 @@ async function deleteWord(v) {
     wordsDB.delete(v)
 }
 async function searchWord(v) {
-    const tabId=await getTabId();
-    console.log('search',v)
-    chrome.scripting.excuteScript(  { 
-        target: {tabId: tabId},
-        func: (url)=>{
-            const event=new CustomEvent('search-word',{url});
+    const tabId = await getTabId();
+    console.log('search', v)
+    chrome.scripting.excuteScript({
+        target: { tabId: tabId },
+        func: (url) => {
+            const event = new CustomEvent('search-word', { url });
             window.dispatchEvent(event);
         },
         args: [v]
@@ -65,10 +68,9 @@ async function searchWord(v) {
 }
 async function init() {
     const res = await wordsDB.get()
-    console.log(res, 'init')
     return res
 }
-async function getTabId(){
+async function getTabId() {
     let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     return tab.id
 } 
