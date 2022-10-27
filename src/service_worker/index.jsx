@@ -31,8 +31,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         case "SEARCH_WORD":
             searchWord(data);
             break;
+        case "ENABLE":
+            enable(data);
+            break;
         default:
-            console.log('unknown type')
+            console.log('unknown type',data)
     }
     return true;
 })
@@ -65,6 +68,10 @@ async function searchWord(v) {
         },
         args: [v]
     })
+}
+async function enable(v) {
+    const tabId = await getTabId();
+    chrome.tabs.sendMessage(tabId, {enable: v})
 }
 async function init() {
     const res = await wordsDB.get()

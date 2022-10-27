@@ -73,7 +73,6 @@ function handleKeydown(e) {
                 openInput('words')
             }
         } else if (active.e && active.f) {
-
             if (selectWord) {
                 send("ADD_MEANING", selectWord)
             } else {
@@ -105,7 +104,6 @@ function send(type, data='') {
     return chrome.runtime.sendMessage({ type: type, data: data })
 }
 function initConfig(){
-    // send("GET_CONFIG").then(res=>{console.log(res,'res')})
 }
 async function reviewWords(){
     words=await send("GET_ALL_WORDS");
@@ -117,8 +115,23 @@ async function reviewWords(){
 function start(){
     initConfig();
     document.addEventListener('keydown', handleKeydown)
-    window.addEventListener('search-word', ({ url }) => {
-        window.open(url)
-    });
+    chrome.runtime.onMessage.addListener(
+        function(request, sender, sendResponse) {
+        const {type,data}=request;
+        if(type==='GET_ENABLE_STATE'){
+            const res=localStorage.getItem('ENABLE_WORDPICKER')||'true';
+            sendResponse(res)
+        }
+        if(type==='SET_ENABLE_STATE'){
+            localStorage.setItem('ENABLE_WORDPICKER',data);
+            if(data==='true'){
+                document.removeEventListener('keydown',handleKeydown);
+                document.addEventListener('keydown', handleKeydown);
+            }else{
+                document.removeEventListener('keydown',handleKeydown);
+            }
+        }
+    
+        });
 }
 start()
