@@ -17,6 +17,7 @@ export default function WordsList(props) {
                         key={item.id}
                         className="word-item"
                         onClick={(e) => {
+                            navigator.clipboard.writeText(item.word)
                             let last = document.querySelector('.move');
                             if (last) {
                                 last.classList.remove('move')
