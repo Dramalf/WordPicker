@@ -8,10 +8,10 @@
 * 未释义 : The words without explaination
 * 导出 : Export the chosen words,by date or by priority, into your clipboard
 * 配置 : Set the config of operates
-* Enable : Switch to endable keyboard listener or turn off it.
-### TODO 🔖🕙
+* Switch the controller to endable keyboard-listener or turn off it
 * click the word in note then set it into clipboard automatically
-* enable to use f+e to add explaination to this word after click it
+### TODO 🔖🕙
+* enable to use f+e to add explaination to the word after click it
 ### HOW TO USE?
 * `git clone https://github.com/Dramalf/WordPicker.git`
 * Go to [chrome://extensions/](chrome://extensions/),chose 'developer mode', chose to load `build` file folder
