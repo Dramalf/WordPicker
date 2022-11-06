@@ -33,7 +33,21 @@ const ms = [
     'border-radius:4px'
   ].join(';')
   // or
+
+function checkExecute(e){
+    let res=true;
+    if(document.hasFocus()){
+        if(window.getSelection().toString()){
+            e.preventDefault();
+            res=true;
+        }else{
+            res=false
+        }
+    }
+    return res;
+}
 function handleKeydown(e) {
+    if(!checkExecute(e))return 
     const key = e.key.toLowerCase();
     if(key==='tab'){
         if(input.style.marginBottom){
@@ -96,6 +110,7 @@ function closeInput() {
 }
 function openInput(type) {
     document.body.appendChild(input);
+    input.value=''
     input.focus();
     isEntering = true;
     enterType = type;
