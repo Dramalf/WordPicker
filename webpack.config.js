@@ -8,8 +8,6 @@ const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const ImageMinimizerPlugin = require("image-minimizer-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const EncodingPlugin = require('webpack-encoding-plugin');
-const SpeedMeasurePlugin = require("speed-measure-webpack-plugin");
-const smp = new SpeedMeasurePlugin();
 
 const getStyleLoaders = (preProcessor) => {
   return [
@@ -128,14 +126,6 @@ module.exports={
   resolve: {
     extensions: [".jsx", ".js", ".json"],
   },
-  devServer: {
-    hot:true,
-    // 将 bundle 写到磁盘而不是内存
-    devMiddleware:{
-      writeToDisk: true
-    }
-    
-},
   mode: "production",
   performance: false
 };

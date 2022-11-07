@@ -36,9 +36,8 @@ const ms = [
 
 function checkExecute(e){
     let res=true;
-    if(document.hasFocus()){
+    if(['input','textarea'].includes(e.target.type)){
         if(window.getSelection().toString()){
-            e.preventDefault();
             res=true;
         }else{
             res=false
